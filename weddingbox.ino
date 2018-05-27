@@ -8,12 +8,24 @@
 #include <math.h>
 
 #define TESTMODE_BANDY
-#define TESTMODE_MARATZI
+/*
+ * 51.340293, 12.331978
+ * 51.342043, 12.330518
+ * 51.342713, 12.331173
+ * 51.343082, 12.332589
+ * 51.341155, 12.335382
+ * 51.339222, 12.334542
+ */
+//#define TESTMODE_MARATZI
+
+//if there is not enough SRAM you could select this option to put all waypoints 
+//to the progmem
+//#define USE_PROGMEM_FOR_LOCATIONS
 
 #define LCD_DISPLAY_CHARLENGTH    20
 #define LCD_DISPLAY_LINES         4
 
-#define GPS_WAYPOINTTOLERNACE     200 //m
+#define GPS_WAYPOINTTOLERNACE     150 //m
 #define GPS_NUM_OF_WAYPOINTS      4
 
 #define GPS_MIN_HDOP              300.0
@@ -82,13 +94,17 @@ const struct date_s weddingdata
 #endif
 };
 
+#if defined(USE_PROGMEM_FOR_LOCATIONS)
 const struct Positions_s positions[GPS_NUM_OF_WAYPOINTS] PROGMEM =
+#else
+const struct Positions_s positions[GPS_NUM_OF_WAYPOINTS] =
+#endif
 {
     //johannapark
   {
 #if defined(TESTMODE_BANDY)
-    51.339934,
-    12.332493,
+    51.340293, 
+    12.331978,
 #elif defined(TESTMODE_MARATZI)
     51.389551, 
     12.162822,
@@ -112,8 +128,8 @@ const struct Positions_s positions[GPS_NUM_OF_WAYPOINTS] PROGMEM =
   //stroemthaler see
   {
 #if defined(TESTMODE_BANDY)
-    51.339934,
-    12.332493,
+    51.342043, 
+    12.330518,
 #elif defined(TESTMODE_MARATZI)
     51.389101, 
     12.162841,
@@ -137,8 +153,8 @@ const struct Positions_s positions[GPS_NUM_OF_WAYPOINTS] PROGMEM =
   //Garten
   {
 #if defined(TESTMODE_BANDY)
-    51.350686, 
-    12.342319,
+    51.342713, 
+    12.331173,
 #elif defined(TESTMODE_MARATZI)
     51.388561, 
     12.164328,
@@ -148,7 +164,7 @@ const struct Positions_s positions[GPS_NUM_OF_WAYPOINTS] PROGMEM =
 #endif
     "Garten",
     {
-      "Schoen ist's hier,",
+      "Schoen ist´s hier,",
       "mit Roster und Bier!",
       "Erholung pur!",
       "Wo sind wir hier nur?",
@@ -158,13 +174,13 @@ const struct Positions_s positions[GPS_NUM_OF_WAYPOINTS] PROGMEM =
       "Jetzt koennt ihr",
       "erst einmal entspan-",
       "nen.",
-    }
+    },
   },
   //Wohnung Jami
   {
 #if defined(TESTMODE_BANDY)
-    51.333207, 
-    12.351588,
+    51.343082, 
+    12.332589,
 #elif defined(TESTMODE_MARATZI)
     51.388079, 
     12.165237,
@@ -193,6 +209,7 @@ const struct Positions_s positions[GPS_NUM_OF_WAYPOINTS] PROGMEM =
 
 char *P(const char *stringPROGMEM)
 {
+#if defined(USE_PROGMEM_FOR_LOCATIONS)
   static char stringbuf[LCD_DISPLAY_CHARLENGTH + 1] = { '\0' };
 
   memset(stringbuf, (int)' ', sizeof(stringbuf - 1));
@@ -200,6 +217,9 @@ char *P(const char *stringPROGMEM)
   strcpy_P(stringbuf, stringPROGMEM);
 
   return stringbuf;
+#else
+  return stringPROGMEM;
+#endif
 }
 
 int getNoOfDays(int Month, int Year)
@@ -471,8 +491,13 @@ void loop() {
     static double distance;
     if(!coordinats_shown)
     {
+      #if defined(USE_PROGMEM_FOR_LOCATIONS)
       double lat = (double)pgm_read_float_near(&positions[act_quest].position_lat);
       double lng = (double)pgm_read_float_near(&positions[act_quest].position_lng);
+      #else
+      double lat = positions[act_quest].position_lat;
+      double lng = positions[act_quest].position_lng;
+      #endif
   
       
       distance = TinyGPSPlus::distanceBetween(gps.location.lat(), gps.location.lng(), lat, lng);
